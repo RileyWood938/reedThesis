@@ -1,9 +1,13 @@
 \documentclass{amsart}
 \usepackage{graphicx} % Required for inserting images
 
-\title{Example thesis log}
+\title{Thesis log}
 \author{Riley Wood}
 \date{\today}
+
+
+\usepackage[style = ieee, backend = biber]{biblatex}
+\addbibresource{../bibliography.bib}
 
 \begin{document}
 
@@ -12,17 +16,44 @@
 \section{Week $1$}
 
 \subsection{What I learned this week}
-Read pages 1-4 of %\cite{}
+\begin{itemize}
+  \item Read \cite{DomainTheory}, a paper looking to use algebraic effects and domain theory to give a calculus and abstract machine for functional logic programming. 
+They base this off of \textbf{Call By Push Value} (CBPV). 
+It is a little more domain theoretic than I maybe am planning to get with this project, but it does fit into a pattern of papers from this year's popl working on algebraic effects and CBPV.
+  \item 
+Read\cite{Hyperfunctions}, a paper which looks to make a generalization for continuations and algebraic effects in the concurrent setting. 
+They build a framework for understanding this pattern that shows up in a bunch of concurrent functional programming contexts (and also with church numerals(!). 
+There could be a project looking to find of implement this in the wild
+  \item 
+Read \cite{Hasegawa-Thielecke}, another paper interested in CBPV, this time looking to do a bunch of category theory to include both Call by Name and Call by Value interpretation into one category or something like that.
+The issue is that these operations break associativity, so they use Duploids (what are these?) to solve their problems.
+  \item 
+Read \cite{SemanticsToSyntax}, a pretty type-theory focused paper which tries to reflect some structure from comprehension categories back into the type systems they support.
+They offer some prohects to extend their work, tryign to show their syntax is complete (?) and trying to compare their work to bicategorical type theory.
+  \item 
+Read \cite{WhatIsMonoid}, a paper which looks to build monoidal structures that can describe everything we see in CS that looks like a monoid but doesnt work out.
+In particular they are interested in generalizing relative monads (whatever those are) and CBPV . 
+Once again we get a discussion of associativity being broken by CBN and CBV.
+They solve this with bi-skew multicategories.
+It seems like their is a project to compare all these different ways of grappling with how CBPV breaks things. Maybe some research could emerge from that.
+This paper is also pretty generous with future work. 
+Syntactic treatment of their monoid, trying to work on a theorem for representing bi-skew multicategories, and exploring what monoid actions look like (maybe in a multi\emph{act}agory - whatever that means).
+
+\end{itemize}
 
 \subsection{What I wrote this week}
+Brief summaries of the papers referenced above, some ideas for projects that we can discuss in our next meeting.
 
 \subsection{Questions}
+I tried very hard not to dive into every definition and calculation in these papers, so I have questions about pretty much every programming language and category theoretic term referenced above.
 
 \subsection{Next week plan}
+Before our next meeting (M-TH), continue lit review, focusing slightly more on abstract interpretation review.
 
-%\bibliographystyle{alpha}
-%\bibliography{references}
+In our meeting: decide between available project options (will discuss them in as much detail as I am able then) .
 
+After our meeting: look for "tentpole" papers and allow a bit more time to dive into common definitions (and WRITING the common definitions).
 
+\printbibliography[]
 
 \end{document}
