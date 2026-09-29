@@ -23,9 +23,23 @@
 ]{reedthesis}
 \usepackage{graphicx,latexsym} 
 \usepackage{amssymb,amsthm,amsmath}
+\usepackage{verbatim}
 \usepackage{longtable,booktabs,setspace} 
 \usepackage{rotating} 
+\usepackage{todonotes}
 \usepackage[english]{babel}
+
+\usepackage{stmaryrd}
+\usepackage[OT1]{fontenc}
+\newcommand{\mand}{\quad \text{and} \quad}
+\newcommand{\mso}{\quad \text{so} \quad}
+\newcommand{\codex}[1]{\texttt{#1}}
+
+\newcommand{\kil}{\codex{kill} }
+\newenvironment{code}
+{\verbatim}
+{\endverbatim}
+%
 
 
 \title{Undefined Thesis Paper Project}
@@ -72,7 +86,7 @@
 
   \mainmatter % here the regular arabic numbering starts
   \pagestyle{fancyplain} % turns page numbering back on
-  \include{introduction}
+%  \include{introduction}
 
 % Double spacing: if you want to double space, or one and a half 
 % space, uncomment one of the following lines. You can go back to 
@@ -80,6 +94,8 @@
 % \onehalfspacing
 % \doublespacing
 	
+  \include{introToFV}
+
 %All the stuff that comes with the thesis template.	
 \include{defaultChapters}
 

@@ -1,0 +1,186 @@
+\let\svtodo\todo\renewcommand\todo[1]{\svtodo[inline]{#1}}
+
+\chapter{Introduction to Formal Verification}
+\section{The Setting}
+\todo{I am going for a pretty gentle introduction. Maybe too gentle? I am thinking this will be the part of my thesis my mom reads to support me and I want it to make sense. We'll maybe tackle the Galois connection later}
+
+Given that we generally write programs to perform some task, it may be desirable to know that a program does what we want it to.
+We are interested in demonstrating this via a proof (in the mathematical sense) that a program is ``correct''.
+Frequently testing of code is used to determine that it is ``correct'', but for any program that say, takes an integer as input, there will be a (countably) infinite number of test cases.
+No amount of testing can verify that there is not some input you have not tried yet which breaks the code.
+Testing code can only ever provide a proof of incorrectness, that is an example of an input where the code behaves badly.
+
+Acquiring a proof of correctness, or a demonstration that there is no input on which our program behaves incorrectly, requires more ingenuity.
+\todo{talk about Rice's theorem?}
+The first challenge is defining what ``correctness'' refers to. 
+We shall take the notion that a program is correct if for every input, it is impossible to reach an error state.
+\todo{create a notion of program state (definition here)}
+\todo{formal definition of correctness }
+With these tools in hand, let us consider the following example
+\begin{code}
+x = false 
+if x :
+  kill
+\end{code}
+\todo{decide on a simple language and how to display code in the thesis}
+\todo{labels for lines}
+Here an error will be considered any run of this program in which \kil is reached. \todo{fix kill not rendering properly}
+It is quickly evident that this program can never reach the \kil command, but let us explore how our notion of states applies here.
+\missingfigure{figure showing states in $\{\ell_0, \ell_1, \ell_2, \ell_3\} \times \{x = false, x = true\}$}
+This state diagram shows all possible program states, and we can construct the arrows between states algorithmically. 
+For a particular state, run the next line of code, and draw an arrow to whatever state you reach.
+Do this for every possible state, and if there exists a path from the start state to any error state, the program fails verification.\\
+This is the basic idea underpinning Kripke structures, a graph-based approach to checking program correctness.
+\todo{define Kripke structures}
+
+The major limitation of Kripke structures is demonstrated by the following program
+\begin{code}
+Assert x >= 0
+Assert y >= 0
+if x+y < 0:
+  kill
+\end{code}
+Despite it being evident that reaching \kil is not possible, Kripke structures as we have defined them will give us some trouble.
+The issue comes with the construction of the state diagram for this program, algorithmically constructing a state for every one of the infinite possible starting combination $(x, y)$ will exceed memory limitations.
+The problem is that the language of Kripke structures is unable to accommodate the possible starting configurations, even though it is clear to our eyes that two positives numbers could not add to a negative number. 
+\todo{I don't actually know if this is a real issue with Kripke structures here. I like this program as an example for sign analysis, but I may be under representing Kripke. Need to get a proper def of Kripke structures (or drop them entirely)}
+
+To navigate this, we take an abstract view of each program variable. 
+Rather than think of variables as tied to specific values ``$x$ is $1$", we can instead consider ``$x$ is positive".
+This is the fundamental idea of abstract interpretation, rather than tracking specific values at each point in the program flow, we track some generalization of the values.
+
+In this example we can apply the idea of sign analysis.
+We can consider if it is possible for each variable to be negative, $0$, or positive.
+Say $\alpha$ is our function which takes a variable to its abstraction.
+At $\ell_0$ in the above program, $x$ can be $0$ or positive, so we write $\alpha(x) = \{0, +\}$.
+This allows us to reduce our infinite possible starting configurations down to just one: 
+\[
+ \ell_0, \; \alpha(x) = \{0, +\},\; \alpha(y) = \{0, +\}.
+\]
+Now we can think about how to perform the check $x + y < 0$.
+Because we are thinking of $x$ and $y$ in terms of abstractions of their actual values, we need to define $+$ on those abstractions.
+Fortunately, in this example that is straightforward:
+\begin{center}
+  \begin{tabular} {c | c c c}
+ +&-&0&+\\ \hline
+ -&-&-&\{-, 0, +\} \\
+ 0&-&0&+\\
+ +&\{-, 0, +\} & + &+
+\end{tabular}
+\end{center} \todo{really this should be a figure}
+Now we can compute $\alpha(x) + \alpha(y)$ by plugging all the pairs of symbols in $x$ and $y$ into this table and collecting all of the results in a new set:
+\[\alpha(x) + \alpha(y) = \{0, +\}.\]
+Now we can see that at $\ell_1$, $x + y$ cannot take any negative value, allowing us to conclude that \kil is never reached.
+
+It may feel that I have restated the obvious in describing the possible values that $x$ and $y$ have taken on here, but the importance of this maneuver is that an abstraction $\alpha$ can be performed on a variable by a computer.
+This enables a computer to automatically perform the reasoning work that we did when we thought ``$x$ can't be negative".
+In general, abstract interpretation seeks to perform this type of work: allowing a computer to more easily make generalizations about the objects in the code we are reasoning about.
+
+\subsection{The Abstraction Function}
+
+As we saw in the previous example, the ``abstraction function" $\alpha$ is critical for providing additional reasoning capabilities to the computer.
+In general, $\alpha$ is thought of as taking program variables and giving us an element in some ``Abstract Domain".
+What we hope is that the elements in our domain will in some way be an overapproximation of the actual values. 
+In our example, this domain consisted of possible combinations of $-, 0,$ and $+$, and it is easy to see how we get an overapproximation from this choice.
+If $x$ could be positive, we have $\alpha(x)$ contain ``$+$", which represents all positive numbers, surely a good approximation for any particular positive number.
+\todo{need to break this up a little}
+
+To make this notion of overapproximation formal, it is first useful to introduce the opposite operation, a concretization fucntion $\gamma$. 
+This function takes something in the abstract domain and tells us what ``real values'' it could have. 
+In our example above, we could consider
+\[
+\gamma(\{0\}) = \{0\} \mand \gamma(\{+\}) = \{1, 2, 3, \ldots \}.
+\]
+With $\gamma$ in hand we can describe the idea of overapproximation as follows:
+\[
+x \subseteq \gamma(\alpha(x))
+\]
+That is, if we take $x$ and abstract it, then the concrete values which $\alpha(x)$ could take should include the actual value of $x$.
+
+The other desired effect of $\alpha$ is to take some operation like $+$ and give us a version which works on elements of the abstract domain.
+If we let $c$ represent some statement in the program, we are interested in an abstract version of that statement $\llbracket c \rrbracket$.
+The idea is that given some program state, we can apply $c$ to get to another program state.
+Then what we would like is that for a state $s$, we can abstract it to $\alpha(s)$, and have \todo{yuck this paragraph needs work}
+\[
+c(s) \subseteq \gamma(\llbracket c \rrbracket(\alpha(s))).
+\]
+In common language, if we take some program state $s$ and abstract all of the variables in that state to get $\alpha(s)$, then applying the abstract version of $c$ should give us an overapproximation of simply applying $c$ to $s$.
+\todo{I don't really like how I am approaching this part. Maybe I should write the formal introduction to these concepts before this?}
+
+\subsection{Abstract Domains}
+
+With the work of $\alpha$ clarified, we move our discussion to where alpha takes our program variables to.
+The abstract domain is where our approximations of variables live, and the example of sign analysis uses subsets of $\{-, 0, +\}$ as our abstract domain.
+It is clear that this domain gives us an overapproximation that is correct, but we may run into situations where this domain overapproximates too much for us to prove any useful properties.
+Consider the following program
+\begin{code}
+Assert x >=2
+if x == 1:
+  kill
+\end{code}
+In this program it is clearly impossible for \kil to be reached, but
+\[\alpha(x) = \{+\}\mso 1 \in \gamma(\alpha(x)).\]
+Thus the check \codex{x == 1} could appear true because our abstract domain thinks that $1$ is a possible value of $x$.
+The problem here is that our domain is only able to record that $x$ is positive, so that the information $x >=2 $ is approximated by $x > 0$.
+This program would then fail to be verified by sign analysis.
+
+In this case, we can resolve the issue by moving to a more expressive domain.
+Rather than considering only the sign of $x$, we can let $\alpha$ give us an upper and lower bound on the values of $x$.
+In this case, 
+\[
+  \alpha(x) = [2, \inf]
+\]
+\todo{think a little bit about your choice of brackets here}
+This domain allows us to see that
+\[
+  \gamma(\alpha(x)) = \gamma([2, \inf]) = \{2, 3, \ldots\}
+\]
+which does not contain $1$.
+This allows us to verify that $\kil$ is never reached.
+
+This has demonstrated how our choice of abstract domain can change which programs will pass verification.
+With a more expressive domain, we get a finer overapproximation, and hence more programs will be verifiable.
+Coupled with this is an increased computational cost associated with more expressive domains. 
+In the case of intervals, we are now keeping track of two bounds per variable, and computations $\llbracket c \rrbracket$ must take both bounds into account.
+\todo{do I want to make and example of how $\llbracket + \rrbracket$ works here?}
+
+Thinking about the domain of intervals allows us to verify additional programs, but it is still an overapproximation, and we can construct examples which exploit this.
+The interval domain is unable to account for relationships between variables, as is demonstrated by the following example program.
+\begin{code}
+Assert 0 <= x <= 1
+y = x + 1
+if y == x:
+  kill
+\end{code}
+After $y$ is assigned \todo{once code labels are sorted out, make this more precise}, our abstracted variables are
+\[\alpha(x) = [0, 1]\mand \alpha(y) = [1, 2] .\]
+These intervals are correct in that $x$ and $y$ must fall within these ranges, but we lose information about their relationship.
+Thus when the equality check \codex{y == x} is conducted, we look at the two intervals and see that indeed we could have $x = 1$ and $y = 1$.
+This causes our program to fail verification.
+\missingfigure{figure showing $x$ and $y$'s relationship, with a shaded square representing where they could be according to the interval domain, and a line representing where they could actually be}
+The check $x == y$ will always be false, but our overapproximation is too coarse, leading to this program failing according to our abstract analysis.
+
+This problem is characteristic of abstract interpretation. 
+Because our goal is to overapproximate, there will always be cases where our approximations are too large, and programs will fail verification even though they are correct.
+Just choosing finer approximations 
+This indicates that we should always choose the finest possible approximation in order to verify as many programs as possible.
+The challenge is one of efficiency, as we briefly discussed before, the interval domain comes at a slightly higher performance cost than the sign domain.
+In general, a finer approximation requires us to store more information, leading to worse performance.
+This leads us to a tradeoff at the heart of abstract interpretation: by picking a domain which more closely approximates the actual values of program variables we are able to correctly verify more programs, however we also must pay more in terms of performance.
+
+Programs frequently want to have some kind of relationship between variables, and the inability to model this is seen as too great a limitation for the interval domain to be particularly useful.
+In order to capture a finer overapproximation, we can consider a number of other candidate domains, although further exploration of those domains is left to \todo{put furthur discussion of zonotopes and polyhedra (maybe even octagons) somewhere else}
+\section{The Abstract Lattice}
+Despite the faults of the interval domain, it is instructive to explore some further properties of abstract interpretation in the context of intervals.
+As an example, consider the following program
+\begin{code}
+Assert 0 <= x <= 2
+if x <= 1 : 
+  y = 1  
+else:
+  y = 0 
+if y == 1:
+  kill
+\end{code}
+What are the possible values of $y$ when we check \codex{y == 1}?
+

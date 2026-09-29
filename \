@@ -1,0 +1,56 @@
+\newcommand{\kil}{\begin{verb} kill \end{verb}}
+
+
+\chapter{Formal Verification}
+\subsection{The Setting}
+Given that we generally write programs to perform some task, it may be desirable to know that a program actually performs the task.
+In particular a mathematical proof of correctness is desirable.
+\todo{talk about Rice's theorem?}
+The first challenge is defining what ``correctness'' refers to. 
+We shall take the notion that a program is correct if for every input, it is impossible to reach an error state.
+\todo{create a notion of program state (definition here)}
+\todo{formal definition of correctness }
+With these tools in hand, let us consider the following example
+\begin{verbatim}
+x = false 
+if x :
+  kill
+\end{verbatim}
+\todo{decide on a simple language and how to display code in the thesis}
+\todo{labels for lines}
+Here an error will be considered any run of this program in which \kil is reached. \todo{fix kill not rendering properly}
+It is quickly evident that this program can never reach the \kil command, but let us explore how our notion of states applies here.
+\missingfigure{figure showing states in $\{\ell_0, \ell_1, \ell_2, \ell_3\} \times \{x = false, x = true\}$}
+This state diagram shows all possible program states, and we can construct the arrows between states algorithmically. 
+For a particular state, run the next line of code, and draw an arrow to whatever state you reach.
+Do this for every possible state, and if there exists a path from the start state to any error state, the program fails verification.\\
+This is the basic idea underpinning Kripke structures, a graph-based approach to checking program correctness.
+\todo{define Kripke structures}
+
+The major limitation of Kripke structures is demonstrated by the following program
+\begin{verbatim}
+Assert x >= 0
+Assert y >= 0
+if x+y < 0:
+  kill
+\end{verbatim}
+Despite it being evident that reaching \kil is not possible, Kripke structures as we have defined them will give us some trouble.
+The issue comes with the construction of the state diagram for this program, algorithmically constructing a state for every one of the infinite possible starting combination $(x, y)$ will exceed memory limitations.
+The problem is that the language of Kripke structures is unable to accommodate the possible starting configurations, even though it is clear to our eyes that two positives numbers could not add to a negative number. \todo{I don't actually know if this is a real issue with Kripke structures here. I like this program as an example for sign analysis, but I may be underrepresenting Kripke. need to get a proper def of Kripke structures (or drop them entirely)}
+
+To navigate this, we take an abstract view of each program variable. 
+Rather than think of variables as tied to specific values "$x$ is $1$", we can instead consider "$x$ is positive".
+This is the fundamental idea of abstract interpretation, rather than tracking specific values at each point in the program flow, we track some generalization of the values.
+
+In this example we can apply the idea of sign analysis.
+We can consider if it is possible for each variable to be negative, $0$, or positive.
+Say $\alpha$ is our function which takes a variable to its abstraction.
+At $\ell_0$ in the above program, $x$ can be $0$ or positive, so we write $\alpha(x) = \{0, +\}$.
+This allows us to reduce our infinite possible starting configurations down to just one: 
+\[
+ \ell_0, \; \alpha(x) = \{0, +\},\; \alpha(y) = \{0, +\}.
+\]
+
+
+
+
