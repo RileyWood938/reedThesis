@@ -1,4 +1,4 @@
-% The `reedthesis' class (.cls) file has a number of options. Most of these
+ The `reedthesis' class (.cls) file has a number of options. Most of these
 % options are passed directly to the book class, but we have a number of custom options:
 % - `notocchapterdots' - disable the Table of Contents dots between chapters.
 %	This only affects the dots between the Chapter N: ... heading and their respective page numbers.
@@ -29,9 +29,76 @@
 \usepackage{todonotes}
 \usepackage[english]{babel}
 
+\theoremstyle{definition}%
+\theoremstyle{sltheorem}%
+% Display "Theorem 1", "Lemma 2", etc. in cross references.  
+% It's important to load this last after all the other packages!
+\usepackage[
+    noabbrev,   % E.g., "Figure" instead of "Fig."
+    capitalise, % E.g., "Figure" instead of "figure"
+    nameinlink  % Make "Figure 1" linked instead of just "1".
+  ]{cleveref} 
+
+
+%https://paulwintz.com/mathematical-writing/theorem-like-environments-in-latex/ This blog got me my environments.
+\newcommand{\providetheorem}[2]{
+  % #1: Environment name.
+  % #2: Display name
+  \ifcsdef{#1}{
+    % The #1 environment is already defined. 
+    \ifcsdef{end#1}{}{
+      \PackageError{providetheorem}{%
+        % Error message:
+        The command "#1" was already defined, but "#1end" was 
+        undefined, indicating that "#1" is not an environment.
+      }{}
+    }
+  }{
+    % The #1 environment is not defined, yet, so we define it.
+    \newtheorem{#1}{#2}
+  }
+}
+%%% Define theorem environment %%%
+\providetheorem{theorem}{Theorem}
+\crefname{theorem}{Theorem}{Theorems}%
+
+%%% Define proposition environment %%%
+\providetheorem{proposition}{Proposition}
+\crefname{proposition}{Proposition}{Propositions}%
+
+%%% Define lemma environment %%%
+\providetheorem{lemma}{Lemma}
+\crefname{lemma}{Lemma}{Lemmas}%
+
+%%% Define corollary environment %%%
+\providetheorem{corollary}{Corollary}
+\crefname{corollary}{Corollary}{Corollaries}%
+
+%%% Define conjecture environment %%%
+\providetheorem{conjecture}{Conjecture}
+\crefname{conjecture}{Conjecture}{Conjectures}%
+
+%%% Define definition environment %%%
+\providetheorem{definition}{Definition}
+\crefname{definition}{Definition}{Definitions}%
+
+% If the document class uses chapters, 
+    % then update numbering to use chapters.
+    \numberwithin{assumption}{section}
+    \numberwithin{definition}{section}
+    \numberwithin{remark}{section}
+    \numberwithin{example}{section}
+    \numberwithin{proposition}{section}
+    \numberwithin{theorem}{section}
+    \numberwithin{lemma}{section}
+    \numberwithin{corollary}{section}
+    \numberwithin{conjecture}{section}
+    \numberwithin{application}{section}
+
 \usepackage{stmaryrd}
 \usepackage[OT1]{fontenc}
 \newcommand{\mand}{\quad \text{and} \quad}
+\newcommand{\mwhere}{\quad \text{where} \quad}
 \newcommand{\mso}{\quad \text{so} \quad}
 \newcommand{\codex}[1]{\texttt{#1}}
 
@@ -40,7 +107,9 @@
 {\verbatim}
 {\endverbatim}
 %
-
+\newcommand{\RR}{\mathbb{R}}
+\newcommand{\vep}{\varepsilon}
+\newcommand{\w}{\omega}
 
 \title{Undefined Thesis Paper Project}
 \author{Riley Wood}

@@ -184,3 +184,157 @@ if y == 1:
 \end{code}
 What are the possible values of $y$ when we check \codex{y == 1}?
 
+
+
+\section{I actually define things}
+\begin{definition}
+ The \emph{concrete lattice} consists of maps from program variables to sets of possible valuations, ordered by set inclusion on each variable.
+\end{definition}
+
+For a programs with integer variables, this lattice will consist of maps
+\[
+  \text{Vars} \to 2^{\ZZ}
+\]
+\todo{is this how I want to tackle program variables?}
+And we order $m \leq n$ if for all variables $v$, $m(v) \subseteq n(v)$ \cite{AbstractInterpretationCornellNotes}.
+\todo{prove this is a lattice}
+
+Now we can define
+\begin{definition}
+  A \emph{program state} $\omega = ( \ell_i, l_a)$ consists of a location $\ell_i$ in the program, and a lattice element $l_a$.
+\end{definition}
+We write 
+\[
+    \w(x) = b 
+\]
+To say that the map $l_a$ of state $\omega$ assigns the set of values $b$ to variable $x$.
+We write $\ell(\w) = \ell_i$ to say that $\w$ has the location $\ell_i$.
+We write $l(\w) = l_a$ to say that $\w$ has the lattice element $l_1$.\todo{dear god}
+
+We distinguish one state $\w_{init}$, as the initial state of the program.
+This state must have as its location $\ell_0$, the first label in the code, and will map all variables to the set of possible valuations at the start of execution.
+
+For some subset of our code $c$, we might be interested in where we can get by running $c$.
+We write $\w [c] \nu$ to denote that we can run $c$ starting in state $\w$ and it will terminate in state $\nu$.
+Notice that this requires $\ell(\w)$ to be the same as the first location in $c$.
+There could also be no valid state $\nu$, in particular if $c$ contains some non-terminating loop.
+
+\begin{definition}
+  The \emph{concrete semantics} of a command are a relation on program states where $\w \leq \mu$ if there is a computation $\w [c] \nu$. We get equality only if $c$ is the empty program I think maybe we could have a loop that makes this false...?.
+\end{definition}
+
+Notice that this also induces a relation on lattice elements, where $l(\w) \leq l(\mu)$ iff $\w \leq \mu$.
+
+
+
+
+We may care about $\Omega$, the set of all program states which could ever be reached from $\w_{init}$ by any run of the program.
+This set will generally be quite large, and the work of abstract interpretation is to figure out how we can make it smaller.
+
+For a program or part of a program, we are interested in defining how it affects the program state.
+Say that $c$ is some portion of a program, this could be just one line of our program or any number of contiguous lines, including the entire program.
+$c$ will have some start location $\ell_1$ and (0 or more) stop locations.
+Consider the set of states
+\[
+  \{\w\in \Omega \mwhere \ell(\w) = \ell_1\}.
+\]
+Each of these states will be a possible starting configuration for running $c$.
+We will write $\w \llbracket c \rrbracket \nu$ if $\w$ is a possible starting configuration for $c$, and by running $c$ starting at $\w$ we can land at state $\nu$.
+
+Notice that $c$ could contain a loop which never terminates, so that there may be some $\w$ for which there is no state we reach by running $c$.
+It could also be that $c$ could contain some nondeterministic choice so that there are multiple states we could land in.
+For this reason, we cannot describe $c$ as a function on states, but rather as a relation \cite{CMUNotesOnSemantics}.
+
+  \begin{definition}
+    The \emph{concrete semantics} of a program $c$ with start location $\ell_1$ are a relation on $\Omega$ so that a state $\w$ with $\ell(\w) = \ell_1$ is related to a state $\nu$ if there exists a computation of $c$ starting at $\w$ which terminates in state $\nu$. In this case we write:
+\[
+  \omega \llbracket c \rrbracket \nu
+\]
+to say that the semantics $c$ of a program relates state $\omega$ to state $\nu$.
+
+  \end{definition}
+  \todo{Is this a relation as I have defined it... no I don't think so. Do I want it to be one? Not sure. Really I have given an ordering which is what we want from the lattice anyway.}
+
+In particular, if $\omega$ and $\nu$ have locations $\ell_i$ and $\ell_{i+1}$ respectively, the relation $c$ tells us how the line of code between those locations affects the programs variables
+\todo{an example of this?}
+
+
+\begin{code}
+  let a ~ [0, 1]
+\end{code}
+The semantics to this line will relate $\omega$ to two different program states, one where $a = 0$ and one where $a = 1$.
+
+
+
+
+We can then see our lattice operations will behave as follows:
+The meet of $\nu \sqcap \mu$ will give us the most recent state $\w$ where computation histories reaching $\nu$ and $\mu$ diverged. 
+The join $\nu \join \mu$ will give us the program state $\w$ which can be reached from both $\nu $ and $\mu$, and is nearest to them in computation histories.
+
+
+\begin{definition}
+  An \emph{Abstract Domain} is something... ?? 
+\end{definition}
+
+  \todo{need to fix this guy}
+\begin{definition}
+  An \emph{abstraction function} $\alpha$ is a map from concrete program states to abstract program states.
+\end{definition}
+This needs to include some notion of the galois connection / adjoint functor business
+Also need to talk about it as a map from concrete semantics to abstract semantics.
+\todo{This one will need some work}
+
+\begin{definition}
+  The \emph{Abstract Lattice} of a program is a relation on abstract program states $\alpha(\omega)$ by the abstract semantics of the program.
+\end{definition}
+What is going on in this lattice?
+Meet should give us
+Join should give us 
+
+
+\begin{definition}
+  The \emph{interval domain} consists of intervals over $\RR \cup \{-\infty, \infty\}$.
+\end{definition}
+
+For this domain, our abstraction function $\alpha$ sends a variable $x$ to the range of possible values it could take, and semantics $c$ to some notion of how the semantics could affect the endpoints of the intervals.
+\todo{This needs some work. Maybe $\alpha$ should be included in the abstract domain def?}
+
+\begin{definition}
+  The \emph{Zonotope domain} consists of noise symbols $n_i$ with each associated to an interval over $\RR \cup \{-\infty, \infty\}$. These intervals are restricted to $[-1, 1]$, $[-1, \infty)$, or $(-\infty, 1]$.
+\end{definition}
+
+The expressive power of this domain lies in how $\alpha$ maps program variables to the domain.
+We let
+\[
+  \alpha(x) = a_0 + \sum_{i=1}^d a_in_i 
+\]
+where $d$ is the number of noise symbols defined (also the dimension of the space in which our noise symbols live), and each $a_i \in \RR$.
+This is an affine transformation on the noise symbols, which allows us to capture linear relationships between variables.
+\todo{work an example here?}
+Being able to easily capture linear relationships between variables allows analysis with the Zonotope domain to verify more programs than the interval domain can handle.
+Not all linear relationships can be handled by this model though.
+\todo{work an example here}
+The way that we are able to capture relationships between variables is through exploiting the noise symbols.
+When sampling a variable, we fix a possible value or range of values for each noise symbol, this gives us a restriction on the possible values of other variables to those values that can occur under the restricted range of noise symbols.
+\todo{This is a bad explaination, and probably better handled through example, but it needs to be said somewhere}
+
+\begin{definition}
+  The \emph{polyhedra domain}
+\end{definition}
+\todo{How do we want to approach this?}
+
+\begin{definition}
+  A \emph{Probabilistic Polyhedron} consists of
+  \begin{enumerate}
+    \item Noise symbols $(\vep_1, \ldots, \vep_n) = \vec{\vep} \in (\RR \cup \{-\infty, \infty\})^n$
+    \item A map $M$ from program variables to affine forms over $\vec{\vep}$
+    \item A map $\Delta$ from noise symbols to probability distributions over $\RR \cup \{-\infty, \infty\}$
+    \item A set of linear constraints described by a $m \times n$ matrix $A$ and a $m \times 1$ vector $z$ such that $A\vec{\vep} \leq z$.
+  \end{enumerate}
+\end{definition}
+\todo{Give the concretization}
+Once again we also allow $\alpha$ to map variables via an affine transformation on the noise symbols.
+The key difference from the domain of probabilistic zonotopes is that we allow arbitrary constraints between noise symbols described by $A$ and $z$.
+This means that rather than our affine map taking a "box" of possible noise symbol values and transforming them, it now takes an arbitrary polyhedron of noise symbols.
+
+

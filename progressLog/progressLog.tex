@@ -12,6 +12,36 @@
 \begin{document}
 
 \maketitle
+
+\section{Week $2$}
+
+\subsection{What I learned this week}
+I finally got a good sense of how the probabilistic polyhedra model work, mostly through conversation with Greg and writing a definition for it based on TOPAZ. 
+I also spent some time reading \cite{ZonotopeJoin} which gives some important information about how the probabilistic polyhedra domain works.
+The central algorithm of the paper is not something I am super comfortable with, but I learned from Manu that it is how the probabilistic polyhedra domain handles intersections, and the idea of taking intervals in a "generic position" seems really important.
+
+I think I properly identified what is actually hard about the widening operation for the first time.
+The main issue seems to be that we need a widening "up to affine isomorphism" which requires some choices to be made before using traditional widenings.
+
+
+\subsection{What I wrote this week}
+I wrote definitions for program state, concrete lattice, probabilistic polyhedra which I think are pretty workable as definitions
+I also spent some time trying to define concrete and abstract semantics, but I confused myself a little and these are not good. 
+The concrete semantics definition I did manage to fix, but abstract definitions still need to be fixed.
+I also stole a definition of Zonotopes from TOPZ (Which I don't really know how to cite) and \cite{Zonotopes}.
+
+\subsection{Questions}
+\begin{itemize}
+  \item What does it mean for polyhedra to be in generic position?
+  \item Is it useful to split a "central polyhedron" out from the noise symbol constraints that get introduced during runtime?
+  \item How much does the noise symbol polyhedron get affinely transformed in the existing implementation?
+\end{itemize}
+
+\subsection{Next week plan}
+It seems like the next step is to answer the generic position question, and then work on an algorithm of the form (1) move noise symbol polyhedron to generic position (2) widen noise symbol polyhedron (3) widen variable polyhedra.
+Writing-wise, I can at the very least finish fixing all of my definitions. 
+I think I know what needs to change now, I just didn't figure it out until after most of my work time for the week.
+
 \section{Week $2$}
 
 \subsection{What I learned this week}
