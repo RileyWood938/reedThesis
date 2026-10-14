@@ -187,110 +187,281 @@ What are the possible values of $y$ when we check \codex{y == 1}?
 
 
 \section{I actually define things}
+In order to treat the abstraction of a program formally, it is first important to create a formal structure for the concrete version of the program.
+
 \begin{definition}
- The \emph{concrete lattice} consists of maps from program variables to sets of possible valuations, ordered by set inclusion on each variable.
+ The \emph{concrete lattice} $L_c$ consists of maps from program variables to sets of possible valuations, ordered by set inclusion on each variable.
 \end{definition}
 
-For a programs with integer variables, this lattice will consist of maps
+As an example, for a program with integer variables, this lattice will consist of maps
 \[
-  \text{Vars} \to 2^{\ZZ}
+  L_c = \text{Vars} \to 2^{\ZZ}.
 \]
-\todo{is this how I want to tackle program variables?}
-And we order $m \leq n$ if for all variables $v$, $m(v) \subseteq n(v)$ \cite{AbstractInterpretationCornellNotes}.
-\todo{prove this is a lattice}
+\todo{this can also be presented as $2^{\text{Vars} \to \ZZ}$}
+We order two maps $m \leq n$ if for all variables $v \in \vars(\cP)$, we have that $m(v) \subseteq n(v)$ \cite{AbstractInterpretationCornellNotes}.
+\todo{prove this is a lattice?}
 
-Now we can define
+Within this lattice we may be interested in computing certain operations. 
+The standard lattice operations of meet and join will be useful to us, and here they are straightforward to define as intersection and union.
+We shall soon discuss other lattice operations, as well as how we can use the concrete lattice for verification.
+
+\todo{what am I saying in this paragraph?}
+
+In order to follow code through its execution, we must have a formal notion of taking a "snapshot" of the values at a particular moment.
+This is captured by recording a location in the program, that is a label $\ell_i$ (which for the purpose of this text will be annotations).
+We also need to capture the value which each variable takes, a task for which our lattice can prove helpful.
+
 \begin{definition}
-  A \emph{program state} $\omega = ( \ell_i, l_a)$ consists of a location $\ell_i$ in the program, and a lattice element $l_a$.
+  A \emph{program state} $\w = ( \ell, m)$ consists of a location $\ell$ in the program, and a lattice element $m$.
 \end{definition}
 We write 
 \[
-    \w(x) = b 
+    \w(x) = b \mwhere b \in 2^\ZZ
 \]
-To say that the map $l_a$ of state $\omega$ assigns the set of values $b$ to variable $x$.
+to say that the map $m$ of state $\omega$ assigns the set of values $b$ to variable $x$.
 We write $\ell(\w) = \ell_i$ to say that $\w$ has the location $\ell_i$.
-We write $l(\w) = l_a$ to say that $\w$ has the lattice element $l_1$.\todo{dear god}
+We write $m(\w) = m$ to say that $\w$ has the lattice element $m$.
+\todo{not sure how I want to handle this notation.}
 
-We distinguish one state $\w_{init}$, as the initial state of the program.
-This state must have as its location $\ell_0$, the first label in the code, and will map all variables to the set of possible valuations at the start of execution.
+We distinguish one state $\w_{\init}$ as the starting configuration of the program.
+This state must have location $\ell_0$, the first label in the code, and will map all variables to the set of possible valuations at the start of execution.
+It is worth noting that there are a potentially infinite family of initial states.
+For example if we begin the program with \codex{x} assigned to $0$ or $1$, then there is an initial state with $\w(x) = \{0, 1\}$ but also $\w(x) = \{0, 1, 2\}$ and so on.
+Similarly, there is a family of of initial states which capture subsets of the possible initial valuations, in our example: $\w(x) = \{0\}$ and $\w(x) = \{1\}$.
+To resolve this we choose $\w_\init$ to be the least upper bound of all initial configurations.
 
-For some subset of our code $c$, we might be interested in where we can get by running $c$.
-We write $\w [c] \nu$ to denote that we can run $c$ starting in state $\w$ and it will terminate in state $\nu$.
-Notice that this requires $\ell(\w)$ to be the same as the first location in $c$.
-There could also be no valid state $\nu$, in particular if $c$ contains some non-terminating loop.
+For some subset of our code $c$, we might be interested in what states we can get to by running $c$.
+We write $\w \llb c \rrb \nu$ to denote that we can run $c$ starting in state $\w$ and it will terminate in state $\nu$.
+This only makes sense if the start location of the code $c$ is compatible with $\w$'s associated location. 
+For this triple $\w \llb c\rrb v$ to be valid, we require $\ell(\w)$ to equal the start location of $c$.
 
-\begin{definition}
-  The \emph{concrete semantics} of a command are a relation on program states where $\w \leq \mu$ if there is a computation $\w [c] \nu$. We get equality only if $c$ is the empty program I think maybe we could have a loop that makes this false...?.
-\end{definition}
-
-Notice that this also induces a relation on lattice elements, where $l(\w) \leq l(\mu)$ iff $\w \leq \mu$.
-
-
-
-
-We may care about $\Omega$, the set of all program states which could ever be reached from $\w_{init}$ by any run of the program.
-This set will generally be quite large, and the work of abstract interpretation is to figure out how we can make it smaller.
-
-For a program or part of a program, we are interested in defining how it affects the program state.
-Say that $c$ is some portion of a program, this could be just one line of our program or any number of contiguous lines, including the entire program.
-$c$ will have some start location $\ell_1$ and (0 or more) stop locations.
-Consider the set of states
+Consider
+\begin{code}
+  x = 3
+  x += 2
+  x = x-1
+\end{code}
+Our minimal possible program state at $\ell_1$ is
 \[
-  \{\w\in \Omega \mwhere \ell(\w) = \ell_1\}.
+  \w = (\ell_1, x \mapsto \{3\})
 \]
-Each of these states will be a possible starting configuration for running $c$.
-We will write $\w \llbracket c \rrbracket \nu$ if $\w$ is a possible starting configuration for $c$, and by running $c$ starting at $\w$ we can land at state $\nu$.
+This tells us that $3$ is the value of $x$ at this location in code.
+Now consider how the semantics of the line \codex{x += 2} will affect this state.
+We can see that 
+\[\w \llb \codex{x += 2}\rrb = (\ell_2, x\mapsto \{5\}).\]
+This tells us that the semantics of $\codex{x += 2}$ relate a state with $x$ assigned the value $3$, to a state where $x$ is assigned $5$.
 
-Notice that $c$ could contain a loop which never terminates, so that there may be some $\w$ for which there is no state we reach by running $c$.
-It could also be that $c$ could contain some nondeterministic choice so that there are multiple states we could land in.
-For this reason, we cannot describe $c$ as a function on states, but rather as a relation \cite{CMUNotesOnSemantics}.
-
-  \begin{definition}
-    The \emph{concrete semantics} of a program $c$ with start location $\ell_1$ are a relation on $\Omega$ so that a state $\w$ with $\ell(\w) = \ell_1$ is related to a state $\nu$ if there exists a computation of $c$ starting at $\w$ which terminates in state $\nu$. In this case we write:
-\[
-  \omega \llbracket c \rrbracket \nu
-\]
-to say that the semantics $c$ of a program relates state $\omega$ to state $\nu$.
-
-  \end{definition}
-  \todo{Is this a relation as I have defined it... no I don't think so. Do I want it to be one? Not sure. Really I have given an ordering which is what we want from the lattice anyway.}
-
-In particular, if $\omega$ and $\nu$ have locations $\ell_i$ and $\ell_{i+1}$ respectively, the relation $c$ tells us how the line of code between those locations affects the programs variables
-\todo{an example of this?}
-
+In this example, it seems as if $\llb c \rrb$ acts as a function on program states, but this notion can break down, as in the following example:
 
 \begin{code}
-  let a ~ [0, 1]
+x = 3
+while (x == 3): pass
+x = x-1
 \end{code}
-The semantics to this line will relate $\omega$ to two different program states, one where $a = 0$ and one where $a = 1$.
 
+Now consider how line $2$ affects our program state.
+As above, we begin with $\w = (\ell_1, x \mapsto \{3\})$, but now there is no valid state $\nu$ to complete
+\[
+  \w \llb \codex{while(x == 3):pass} \rrb \nu.
+\]
+Because there is no valid computation of line $2$ which terminates, there can be no terminal state $\nu$ to complete the triple.
+This makes it clear that we cannot view $\llb c \rrb$ as a function on program states, as there can be some states for which $\w\llb c \rrb$ is undefined
 
-
-
-We can then see our lattice operations will behave as follows:
-The meet of $\nu \sqcap \mu$ will give us the most recent state $\w$ where computation histories reaching $\nu$ and $\mu$ diverged. 
-The join $\nu \join \mu$ will give us the program state $\w$ which can be reached from both $\nu $ and $\mu$, and is nearest to them in computation histories.
-
+We could instead imagine $\llb c \rrb$ as a partial function i.e. one which does not evaluate on some inputs, but this too has problems:
+\begin{code}
+  x = 3
+  x ~ {0, 1}
+\end{code}
+Here we see $x$ sampled nondeterministically from $\{0,1\}$.
+If we think about how the semantics of the second line treats the program state $\w = (\ell_1, x \mapsto \{3\})$, we see that there are several possible mappings by $\llb \codex{x ~ {0, 1}} \rrb$. 
+\todo{Why does this code example not work?}
+\[\w\llb \codex{x ~ {0, 1}} \rrb (\ell_3, x \mapsto \{0\}) \mand \w\llb \codex{x ~ {0, 1}} \rrb (\ell_3, x \mapsto \{1\})\]
+are both valid (as is $x \mapsto \{0, 1\}$).
+Here we see how semantics can send one state $\w$ to multiple other states.
+To capture this behavior alongside the possibility of $\w$ being sent to no other state, we define semantics as a relation on program states
+\cite{AbstractInterpretationCornellNotes}.
 
 \begin{definition}
-  An \emph{Abstract Domain} is something... ?? 
+  The \emph{concrete semantics} of a command $c$ are a relation on program states where $\w \leq \mu$ if there is a computation $\w \llb c \rrb \nu$. 
 \end{definition}
 
-  \todo{need to fix this guy}
+\todo{is command what I want to phrase this as?}
+In particular, if $\omega$ and $\nu$ have locations $\ell_i$ and $\ell_{i+1}$ respectively, the relation $\llb c\rrb$ tells us how the line of code between those locations affects the programs variables
+Notice that the relation given by some semantics $\llb c \rrb$ also induce a relation on lattice elements, where $l(\w) \leq l(\mu)$ if and only if $\w \leq \mu$.
+\todo{do I do anything with this??}
+
+With this groundwork in place, we can define program correctness.
+Earlier we thought of correctness as "not doing anything bad" but we can now characterize this notion in terms of a set of error states.
+We can think of error states as problems that will occur when running the program i.e. dividing by 0, or problems with the output of the program i.e. computing something incorrectly. \todo{talk about infinite loops and lassos?}
+These are both captured by the following definition:
 \begin{definition}
-  An \emph{abstraction function} $\alpha$ is a map from concrete program states to abstract program states.
+  Given a program $\cP$ and some set of error states $\Omega$, we say that \emph{the program $\cP$ is correct} if for all subsets $c$ of the program, there is no state $\nu \in \Omega$ such that $\w_{\init} \llb c \rrb \nu$ is valid.
 \end{definition}
-This needs to include some notion of the galois connection / adjoint functor business
-Also need to talk about it as a map from concrete semantics to abstract semantics.
-\todo{This one will need some work}
+\todo{"valid" isn't really defined. also subsets of a program doesn't make sense. Think about how to split up the semantics.}
+
+Now we can see why verification is so challenging, the number of program states is tremendous, and the possible combinations of semantics which must be checked grow exponentially.
+For this reason, we wish to reduce the number of states we must check, and the burden of program semantics
+\todo{I think I need to sit with the idea of semantics of just part of a program and figure out what the heck I mean. Probably related to Greg's comment about the meaning of a program being captured by the least fixed point of its semantics}
+
+To do so, we abstract the concrete lattice $L_c$ to some abstract lattice $L_a$ where we hope proving things will be somewhat easier.
+The idea is to capture an overapproximation of each variable's possible values, and follow those overapproximations through the program.
+This means that instead of testing the program on every valuation $x$ can take, we instead allow the computer to follow the range of values for $x$ through the program.
+To affect this abstraction, we define a function $\alpha$ which will contain information for mapping $L_c$ to $L_a$.
+This abstraction must be paired with some concretization function that maps the other direction.
+\todo{this should probably be replaced with better narrative}
 
 \begin{definition}
-  The \emph{Abstract Lattice} of a program is a relation on abstract program states $\alpha(\omega)$ by the abstract semantics of the program.
+  An \emph{abstraction function} $\a$ and a \emph{concretization function} $\g$ are adjoint maps between the concrete lattice $L_c$ and the abstract lattice $L_a$. Where $\a: L_c \to L_z$ and $\g: L_a \to L_c$.
 \end{definition}
-What is going on in this lattice?
-Meet should give us
-Join should give us 
+As an example, we could consider $L_c$ to be supersets of $\ZZ$, and $L_a$ to be intervals.
+In this case we might have 
+\[\alpha(\{0\}) = [0], \quad \alpha(\{1, 2\}) = [1, 2], \mand \alpha(\{1, 3, 5, 6\}) = [1, 6].\]
+We see that alpha takes elements of our concrete lattice, and gives us intervals of integers instead.
+This means that we need not track how the semantics affect each value in a set, but rather just the endpoints of the interval, significantly easing the burden of checking how our code behaves.
 
+Similarly we can have $\g$ map the other way 
+\[\g([0]) = \{0\}, \mand \g([0,2]) = \{0,1,2\}.\]
+
+It is important that $\alpha$ have some notion of being a "good" overapproximation, that is
+\[\alpha(\{1, 2, 3\}) = [1, 2]\]
+should be viewed as incorrect as we fail to capture all of the possible values in the concrete lattice.
+This is captured by the adjunction which ensures order preservation when mapping between our lattices.
+\todo{I would like to handle the category theory a little more carefully here}
+
+\[\mtext{for all} x \in L_c, \mand y \in L_a, \;  x \sqsubseteq \gamma(y) \iff \alpha(x) \sqsubseteq y.\]
+This is better captured by the diagram
+
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}
+  \node (a) at (0,0) {$x$};
+  \node (b) at (0, 2) {$\gamma(y)$};
+  \draw (a) -- node [left, pos=0.5] {$\sqsubseteq$}  (b);
+  \node (c) at (3, 0) {$\alpha(x)$};
+  \draw[->] (a) -- node [above, pos = 0.5] {$\alpha$} (c);
+  \node (d) at (3, 2) {$y$};
+  \draw[<-] (b) -- node [above, pos = 0.5] {$\gamma$} (d);
+  \draw (c) -- node [right, pos=0.5] {$\sqsubseteq$}  (d);
+\end{tikzpicture}
+\end{figure}
+
+This tells us that the ordering of the concrete lattice is always preserved when we abstract and concretize our values.
+
+Given the abstract lattice, it is natural to adjust our notion of program state to include abstraction.
+\begin{definition}
+  An \emph{abstract state} $\w^\# = (\ell_i, m^\#)$ consists of a location $\ell_i$ in the program, and an element $m^\# \in L_a$.
+\end{definition}
+Given a program state $\w = (\ell_i, m)$, it will often be helpful to consider it's ``abstracted version'', for which we shall write
+\[
+  \w^\# = (\ell_i, \alpha(m)).
+\]
+Also similar to our previous definitons, it will be important to capture how the semantics of the program behave in the abstract lattice.
+Consider the following program:
+\begin{code}
+Assert 1<x<6
+x = x-1
+\end{code}
+In this example, we can see $\w_\init = (\ell_1, x \mapsto \{2, 3, 4, 5\}$, so that $\w_\init^\# = (\ell_1, x \mapsto [2, 5])$.
+Then we would like to compute what abstract state $\nu^\#$ completes $\w_\init^\# \llb \codex{x = x-1} \rrb ^\# \nu^\#$.
+
+\begin{definition}
+ The abstract semantics $\llb c \rrb ^\#$ of a program part $c$ give a relation on abstract program states, where $\w^\# \leq \nu^\#$ iff $\w^\# \llb c \rrb ^\# \nu^\#$.
+\end{definition}
+
+This definition on its own is perhaps not particularly helpful, but we also combine it with an idea of soundness, that is that our abstract semantics should always preserve our overapproximation.
+Formally, for any element $m$ of the concrete lattice with an abstraction
+\[
+  \alpha(m) \sqsubseteq a\in L_a,
+\]
+when we apply some semantics to $m$ and arrive at a new concrete element $n$
+\[
+  m \llb c \rrb n,
+\]
+we want the abstract semantics $\llb c \rrb ^\#$ to map $a$ to abstract states $b$ that are overapproximations of $n$:
+\[
+  a \llb c \rrb ^\# b \mwhere n \sqsubseteq \gamma(b).
+\]
+Once again this is easier to capture in a diagram
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}
+  \node (a) at (0,0) {$m$};
+  \node (b) at (0, 2) {$\gamma(a)$};
+  \draw (a) -- node [left, pos=0.5] {$\sqsubseteq$}  (b);
+  \node (c) at (3, 0) {$n$};
+  \draw[->] (a) -- node [above, pos = 0.5] {$\llb c \rrb$} (c);
+  \node (d) at (3, 2) {$\gamma(b)$};
+  \draw[->] (b) -- node [above, pos = 0.5] {$\llb c \rrb^\#$} (d);
+  \draw (c) -- node [right, pos=0.5] {$\sqsubseteq$}  (d);
+\end{tikzpicture}
+\end{figure}
+
+This says that if we begin with a valid overapproximation and apply the abstract syntax of any part of our program, we should end up with a valid overapproximation of how that syntax behaves in the concrete world.
+
+Now we have the tools to understand abstract interpretation.
+The idea is to give adjoint functions $\alpha$ and $\gamma$ which take us to and from the abstract lattice.
+We then define abstract semantics $\llb c \rrb ^\#$ for each command $c$ in our language.
+Then we can abstract the initial state, and begin stepping through the code, checking after each line to see if our abstract state overapproximates any concrete error states.
+This allows us to test every possible input combination in a single run of the program.
+
+\section{Abstract Transformers}
+
+Remaining is the challenge of picking a suitable abstract lattice, and defining the abstract semantics for certain commands $\llb c \rrb ^\#$.
+We shall tackle the second issue, and defer abstract lattices to a later chapter.
+
+We have seen examples in the interval domain where the abstract semantics of adding $1$ to a variable increases both endpoints of our abstract element.
+In general, intervals are quite good for capturing mathematical operations of this sort, as we have a relatively easy time programming how operations like multiplication, addition, and subtraction will affect a range of possible values.
+Consider, however, the following program:
+\begin{code}
+  Assert 0 < x < 5
+  if (x == 1):
+    x = 10
+  else:
+    x = -x
+\end{code}
+This code begins with $\alpha(x) = [1, 4]$, an abstraction which intervals capture quite tightly, but then we encounter a control flow concept.
+In order to find the possible values of $x$ after this \codex{if} statement, we must follow all paths that the program could take. 
+This requires us to split into two interpretations, one for the branch \codex{x=10} and one for \codex{x = -x}.
+
+To do this formally, if may be useful to think of defining a transformer for a general if statement of the form \codex{if c: x else: y}, where \codex{x} and \codex{y} are parts of the program. 
+We can then think about splitting up our program into two branches.
+The \codex{if} branch should start in the initial state $\w$ subject to the condition that $c$ is true, and then perform interpretation of \codex{x}.
+The starting state subject to the condition that $c$ is true can be denoted $\w \meet c$ where $c$ captures the least upper bound of states that make $c$ true.
+We can notate this as
+\[(\w \meet c)\llb \codex{x} \rrb\nu \]
+To say that the first branch lands us in state $\nu$.
+Similarly for the else branch we get 
+\[(\w \meet !c)\llb \codex{x} \rrb\nu \]
+\[\w \llb \codex{if c: x else: y} \rrb = (\w \meet c)\llb \codex{x} \rrb \join (\w \meet !c) \llb \codex{y} \rrb \]
+
+Following the first branch takes us to $\ell_4$, where we know that $x$ can only be $1$.
+The conditional can be satisfied, as $1 \in [1, 4]$, so we can follow this branch, but while doing so we can narrow our abstraction so that $x$ is in the interval $[1]$.
+Now we can apply the semantics of line $3$ to get $x$ in $[10]$.
+
+Similarly for the \codex{else} path, the conditional narrows our interval to $[2, 4]$, and then the semantics of line $5$ tell us that $\alpha(x) = [-4, -2]$.
+
+But now we have a problem, after this control flow ends we reach $\ell_7$ where the two paths must recombine, but their intervals are not compatible.
+We know that $x$ lives in one of $[-4, -2]$ or $[10]$ but not which one.
+To continue with just $1$ case to check, we must find a new overapproximation of these two intervals.
+This requires us to compute the join in $L_a$, in this case $[-4, -2] \sqcup [10] = [-4, 10]$.
+Now we once again have a single overapproximation, but it has become a far less accurate approximation of the actual values of $x$.
+Control flow operations almost always require us to compute the join of our abstract elements, frequently to the detriment of our approximation's quality.
+
+Another challenge we face when performing abstract interpretation is loops.
+Consider the following example
+\begin{code}
+  Assert x < 0
+  while (x<1):
+    x = x+1 
+\end{code}
+How does our Abstract Interpreter handle this?
+
+
+\chapter{Abstract Domains}
+
+
+
+Our motivating example has also introduced a classic domain for abstract interpretation.
 
 \begin{definition}
   The \emph{interval domain} consists of intervals over $\RR \cup \{-\infty, \infty\}$.

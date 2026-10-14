@@ -12,8 +12,42 @@
 \begin{document}
 
 \maketitle
+\section{Week $4$}
 
-\section{Week $2$}
+\subsection{What I learned this week}
+I did some searching on zonotope widenings, it seems that there is not a standard operator.
+I read \cite{LogicalZonotopeJoin} and \cite{AccurateZonotopeJoin} to try and get a sense of how intervals can end up looking in our domain.
+My conclusion is that we generally will not end up moving the noise Polyhedron due to Joins.
+
+I reread Ula's notes once again and it seems like anything I do generalizes their results almost immediately. I have one candidate which might not be applicable to Ula's work but I don't know if I can keep probabilities around.
+
+Came up with a couple of example scenarios for how to widen together the simplest case I could think of.
+I have identified issues with both of these candidate widenings which will need to be ironed out.
+
+
+\subsection{What I wrote this week}
+I primarily made improvements to my definitions.
+This included fixing some issues with how I defined semantics, abstraction and concretization, and including a notion of a minimal program state which captures all possible valuations of variables.
+
+
+\subsection{Questions}
+\begin{itemize}
+  \item where does this widening actually fit into the probabilistic zonotope/polyhedra setting?
+  \item WHAT is happening with the join/meet/intersection titles in  \cite{LogicalZonotopeJoin}, \cite{AccurateZonotopeJoin}, and Greg's paper? Is intersection join now?
+  \item Do we need bounds on epsilon's in polyhedra domain so that our distributions make sense?
+  \item Why does TOPAZ use \cite{LogicalZonotopeJoin} and not \cite{AccurateZonotopeJoin}?
+\end{itemize}
+
+\subsection{Next week plan}
+I think I should leave the introduction section be for a bit, and start a chapter on the relevant abstract domains.
+This week was a lot of reading about zonotopes and their operations to answer the question about leaving generic position, so I am well-positioned to write on them.
+I am also concerned that I will spend all of my thesis time agonizing over the same chapter if I don't force myself to move on and revisit it later.
+
+Research-wise, a lot depends upon our next meeting, but likely I will pick one of the widening options as the more promising direction, adn go about trying to fix issues with it.
+Likely this will involve thinking about probability distributions quite a bit.
+
+
+\section{Week $3$}
 
 \subsection{What I learned this week}
 I finally got a good sense of how the probabilistic polyhedra model work, mostly through conversation with Greg and writing a definition for it based on TOPAZ. 
