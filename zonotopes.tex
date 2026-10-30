@@ -1,0 +1,209 @@
+\chapter{Abstract Domains}
+We have seen examples of sign analysis and the interval domain which allowed us to verify some simple programs.
+The major limitation of these domains is an inability to encode relationships between variables.
+These relationships are extremely common in practical applications, so finding a way to reason about them is critical.
+Abstract domains like Zonotopes, Octagons, and Polyhedra are used to achieve this.
+
+\section{Zonotopes}
+Zonotopes encode the relationships between program variables by tying the estimates of their values to hidden "noise variables".
+These noise variables are used to capture the uncertainty in the program; when values are chosen nondeterministically, a noise variable is introduced to capture that nondeterministic choice.
+For example, we might have
+\begin{code}
+  x ~ [0, 2]
+  y = 2x + 1
+  if y < x :
+    kill
+\end{code}
+When the first line is interpreted, we create a new noise variable $\vep$ and associate it with the bounds $[0,2]$.
+The idea is that we will carry $\vep$ through the program, and anytime a variable relies upon the nondeterministic choice which created $\vep$, we can include $\vep$ in our estimate for that variable.
+
+We can describe $x$ in terms of $\vep$ by $x = \vep$, and similarly $y$ as $y = 2\vep + 1$.
+Crucially, these descriptions capture how the values of both $x$ and $y$ depend upon the same nondeterministic choice.
+
+In the interval domain, $x$ would be represented by the bound $[0, 2]$ and $y$ by the bound $[1, 5]$.
+This means that our abstract interpreter would tell us that the check $y<x$ could be true because the upper bound on $x$ is greater than the lower bound on $y$.
+However in the zonotope domain we are able to verify that $x < y$ because when we perform a test, we ask "does there exist a $\vep$ which could make this statement true".
+Here there is no such $\vep$, as $y$ is always at least $1$ more than $x$, and hence we get a more powerful tool for verification.
+
+The key is a separate of how we abstract nondeterminism from how we abstract variable values.
+We utilize the noise symbol $\vep$ to capture the nondeterministic value $[0,2]$ and the affine transformations $1 \vep + 0$ and $2\vep +1$ to build possible variable valuations from that noise symbol.
+In programs with multiple nondeterministic choices we introduce additional noise symbols, generally called $\vep_1, \vep_2, \ldots$.
+
+\begin{code}
+  x ~ [0,1]
+  y ~ [0,1]
+  z = 2x+y+1
+\end{code}
+
+To interpret this example we introduce two noise symbols $\vep_1$ and $\vep_2$ which represent the two nondeterministic choices in the program.
+These each are associated with bounds $[0,1]$ and then we can describe our three program variables in terms of $\vep_1$ and $\vep_2$:
+\[x = \vep_1, \quad y = \vep_2, \mand z = 2\vep_1 + \vep_2 + 1.\]
+This effectively captures the relationships between $x$, $y$ and $z$.
+
+Notice that our noise symbols are defined in terms of bounds on the possible values which could be taken.
+This is reminiscent of our earlier examples of abstraction using the interval domain, and in fact we can characterize the noise symbols as living within this domain.
+Zonotopes need not be built with the interval domain as the basis, in principle the noise symbols may live in any domain over which we can sensibly build valuations for variables.
+
+This motivates the description of $\cE$ in our formal definition:
+
+\begin{definition}
+  A \emph{zonotope} is a pair $(\cE, M)$ where $\cE \in \cD$ with $\cD$ some abstract domain that describes the noise symbols, and $M:\vars \to (\RR^n)^*$ maps program variables to affine combinations of noise symbols.
+\end{defnintion}
+
+So far we have always thought of $\cD$ as the interval domain, associating each noise symbol to one interval, but as discussed above, $\cD$ could instead describe our noise symbols as living in octagons or polyhedra.
+
+There is also some nuance to the description of $M$.
+What we get from $M$ is actually a linear map from noise symbols to variables, rather than an affine one.
+However the difference is merely the inclusion of a constant term, which we can incorperate by adding an extra noise symbol $\vep_0$ which always takes the value $1$.
+
+Up to this point we have been writing the affine maps out fully 
+\[
+  z = 1 + 2\vep_1 + \vep_2,
+\]
+but $M$ instead gives the description as a row vector
+\[
+  M(z) = \begin{pmatrix}1 & 2 & 1\end{pmatrix}.
+\] 
+Now to get our combination we can multiply by the vector containing our noise symbols, which we shall often write $\vec{\vep}$.
+\[
+  M(z) \vec{\vep} = M(z) \begin{pmatrix}\vep_0\\\vep_1\\\vep_2\end{pmatrix} = 1 + 2\vep_1 + \vep_2.
+\]
+
+Let us briefly revisit our above example with this new definition.
+Our noise symbols are given by the bounds
+\[
+  \cE = \{[1, 1],[0, 1], [0, 1]\}
+\]
+and then our map encodes the affine transformations:
+\[
+  x = \vep_1, \quad y = \vep_2, \mand z = 1 + 2\vep_1 + \vep_2
+\]
+as the row vectors
+\[
+  M(x) = \begin{pmatrix}0& 1& 0\end{pmatrix}, \quad M(y) = \begin{pmatrix}0& 0& 1\end{pmatrix}, \mand M(z) = \begin{pmatrix}1& 2& 1\end{pmatrix}.
+\]
+Writing these vectors in this manner may inspire us to describe $M$ with a matrix:
+\[
+  M = \begin{pmatrix} 0&1&0\\
+    0&0&1\\
+    1&2&1
+\end{pmatrix}
+\]
+where each row corresponds to the value of a variable.
+
+This description of $M$ in this way provides a clear visual intuition of what the zonotope technique is doing.
+We begin with a box describing the possible valuations of $\vep_1$ and $\vep_2$, then apply an affine transformation to arrive at a new shape, where a point $(x, y, z)$ is in that shape if and only if there is some choice of each $\vep$ which allows those values to coexist.
+\missingfigure{Zonotope graphic}
+
+
+
+\subsection{Abstract Transformers}
+We must now address how to interpret a program in the zonotope domain.
+We have seen already how to handle introduction of variables and nondeterminism in this setting.
+\begin{code}
+x =1
+y ~ [0,1]
+\end{code}
+Interpreting the first line will introduce a new map to $M$, which tells us that $x$ is given by the affine map $x = 1$. 
+The second line requires us to introduce a new noise symbol to handle the nondeterministic choice of $y$ from $[0,1]$.
+Thus we add $\vep_i$ with bounds $[0,1]$ to our zonotope, and create a new mapping in $M$ which encodes $y = \vep_i$.
+
+This can be defined in terms of the rules
+\[\frac{
+    }{\cE, M \vdash x ~ [a, b] \to (\cE \times \{[a, b]\}, M(x) \mapsto \begin{pmatrix}0& \ldots& 0& 1\end{pmatrix}
+}\]
+
+\[\frac{
+    }{\cE, M \vdash x := c_0 + c_1v_1 + \ldots c_nv_n \to \cE, M(x) \mapsto c_0 e_1 + c_1M(v_1) + \ldots + c_nM(v_n) \end{pmatrix}
+}\]
+
+\todo{think about the best way to write these}
+The second rule captures any affine assignment by converting the affine form over each variable into one over noise symbols.
+For example the assignments
+\begin{code}
+x ~ [0, 1]
+y = 2x + 1
+z = 5x + y
+z = x - y
+\end{code}
+give us the affine map
+\[
+  M(z) = 5M(x) + M(y) = 5\begin{pmatrix}0& 1\end{pmatrix} + \begin{pmatrix} 1 & 5 \end{pmatrix} = \begin{pmatrix} 1 & 6 \end{pmatrix}
+\]
+after the first line and
+\[
+  M(z) = M(x) - M(y) =  \begin{pmatrix}0& 1\end{pmatrix} - \begin{pmatrix} 1 & 5 \end{pmatrix} = \begin{pmatrix} 0 & -5 \end{pmatrix}
+\]
+after the second.
+
+These rules are the strong point of this domain, affine assignments are captured with perfect precision.
+Problems begin to arise when we look at non-affine assignments i.e. \codex{x = y*y}.
+These present a challenge and I think always just end up getting linearized somehow.
+\todo{this should probably be discussed further - read about linearization in the souces from Logical Zonotope Join}
+
+\subsubsection{Test and Join}
+Control flow must also be handled with some care. 
+Consider
+\begin{code}
+if x < y:
+  if-block
+\end{code}
+When we interpret \codex{if-block} we want to do so only considering the possible values of $x$ and $y$ which satisfy $x < y$.
+
+This will be a restriction of whatever zonotope governs our variable valuations at the start of the if statement.
+To find the restriction, we can find the noise symbol valuations which satisfy $M(x) \vep < M(y) \vep$.
+Then we are interested in the overlap with our starting set of noise symbol valuations.
+This is given by the meet in the underlying domain so that 
+\[
+  \cE' =\cE \meet (M(x) \vvep < M(y) \vvep).
+\]
+
+Then the meet $Z \meet (x < y)$ of our zonotope with the if-block condition is given by the zonotope $(\cE', M)$.
+The important idea is that taking a meet in the zonotope domain can be achieved by first computing a meet in the underlying interval domain.
+
+The example where $x$ and $y$ are variables is a simplification of the actual case where we can compare affine expressions, but it is functionally equivalent as we can rewrite any comparison of expressions as comparisons of variables.
+This is functionally the same as the approach taken by \cite{TOPAZ}, but offloads the work of encoding $E_1$ and $E_2$ onto our existing affine assignment.
+\todo{this isn't relly true because $A$ and $B$ need not be affine, and by forcing them to be interpreted first we might collapse soem non-linear parts into new noise symbols which would have otherwise cancelled out using Greg's approach}
+\todo{There is also something to be said about the logical product approach}
+
+This gives us some good insight in how to handle branches
+\begin{code}
+if cond:
+  if-block
+else:
+  else-block
+\end{code}
+If we start with an initial zonotope $Z$, we can compute $Z_1 = Z \meet \codex{cond}$ and $Z_2 = Z \meet \codex{!cond}$.
+Then we can interpret \codex{if-block} starting with $Z_1$ and \codex{else-block} with $Z_2$.
+Once we are done with this we face the challenge of joining these two branches.
+
+For two zonotopes, the minimal upper bound need not exist, so there is no canonical way to join two zonotopes \cite{AccurateZonotopeJoin}.
+\todo{I am pretty sure this is what they are saying, and should probably provide an example}
+Instead we must come up with some overapproximation of the join and try to get it as close to minimal as we can.
+
+Algorithms to give approximate zonotope joins are discussed in \cite{LogicalZonotopeJoin}.
+Their algorithm works by taking $M_1(x)$ and $M_2(x)$ and finding a new affine form $M'(x)$ which has as it's constant term the center of $M_1(x)\vep$ and $M_2(x)\vep$, and has for each coefficient the smallest coefficient on that noise variable between $M_1(x)$ and $M_2(x)$.
+Then because this algorithm chooses all of the smallest possible coefficients, a new noise symbol must be introduced to capture the differences between these small coefficients and the larger possible values that can be achieved.
+Performing this on each variable gives a join operation which usually provides a minimal upper bound on the valuations of a particular variable.
+It will be useful later to note that this process only changes the affine forms and introduces new noise symbols, the existing noise symbols remain unchanged by their algorithm.
+
+In \cite{AccurateZonotopeJoin} the authors revisit augmenting their prior result by allowing some relationships between variables to be preserved.
+The idea is to perform the algorithm as above, but to utilize any affine relationships between variables that the two branches have in common.
+This allows them to create a bound for a variable $x$, then if both branches preserve a relation like $x = 2y$, they can determine a suitable affine form $M^\widen(y)$ which preserves $x = 2y$ in the widened zonotope.
+
+These algorithms give us a way to take (approximate) joins in the lattice of Zonotopes in spite of the challenges, so we can proceed to the full rule for interpreting if/else statements:
+\[
+\begin{frac}{(\cE \meet (E_1 < E_2), M, S_1) \implies Z_1, \; (\cE \meet (E_1 \not < E_2), M, S_2) \implies Z_2
+    }{ \cE, M, \codex{if} (E_1 < E_2)\codex{: } S_1 \codex{ else: } S_2 \to Z_1 \join Z_2
+  }.
+\]
+This rule tells us to interpret the if-block $S_1$ with the elements of our initial zonotope that satisfy our condition, interpret the else block $S_2$ with the elements of our original zonotope that cannot satisfy our condition, and then compute the join of the two resulting zonotopes.
+
+\subsubsection{Widening}
+
+Finally we must consider widening operations.
+As we have seen with joins, zonotopes often lack good upper bounds. The same is very much true for the widening operator.
+Any discussion of widening zonotopes is more or less absent from the literature, although some abstract interpretation tools implement versions of zonotope widening
+\todo{cite and research}
+Some options which are always available are widening to $\top$, where we give up any information and simply say that any value is possible, or using a polyhedra widening operator and trying to find a zonotope that suitably overapproximates it.
+Probably the best way to do that would be a per-variable widening a la Ula's work

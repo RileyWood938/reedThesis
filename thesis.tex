@@ -111,15 +111,22 @@
 \newcommand{\RR}{\mathbb{R}}
 \newcommand{\ZZ}{\mathbb{Z}}
 \newcommand{\vep}{\varepsilon}
+\newcommand{\vvep}{\vec{\vep}}
 \newcommand{\w}{\omega}
 \renewcommand{\a}{\alpha}
 \newcommand{\g}{\gamma}
 \newcommand{\llb}{\llbracket}
 \newcommand{\rrb}{\rrbracket}
 \newcommand{\init}{\text{init}}
+\newcommand{\cD}{\mathcal{D}}
+\newcommand{\cE}{\mathcal{E}}
 \newcommand{\cp}{\mathcal{P}}
-\newcommand{\join}{\sqcup}
+\newcommand{\vars}{\text{vars}}
 \newcommand{\meet}{\sqcap}
+\newcommand{\join}{\sqcup}
+
+
+\let\svtodo\todo\renewcommand\todo[1]{\svtodo[inline]{#1}}
 
 
 
@@ -176,7 +183,7 @@
 % \doublespacing
 	
   \include{introToFV}
-
+  \include{zonotopes}
 %All the stuff that comes with the thesis template.	
 \include{defaultChapters}
 

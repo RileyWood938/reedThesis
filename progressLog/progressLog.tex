@@ -1,6 +1,7 @@
 \documentclass{amsart}
 \usepackage{graphicx} % Required for inserting images
 
+\newcommand{\cD}{\mathcal{D}}
 \title{Thesis log}
 \author{Riley Wood}
 \date{\today}
@@ -12,6 +13,39 @@
 \begin{document}
 
 \maketitle
+
+\section{Week $5$}
+
+\subsection{What I learned this week}
+I read some background on how abstract interpretation is motivated by domain theory.
+This required some head scratching about what domain we are looking for a fixpoint in, and what operator we want to find the fixpoint of.
+Reading \cite{AbstractInterpretationLatticeModel} and Greg's TOPAZ paper was quite helpful.
+I also read \cite{CousotProbabilistic} which introduces the scenario space $\Omega$ and how we can incorporate it into abstract interpretation.
+I think I have a pretty solid understanding of how this works, although there is some mathematical polish to be applied to my understanding, probably in a written section.
+One additional detail that seems to be missing from my understanding is how $\Omega \to \cD$ is the same as distributions over $\cD$, I get this intuitively, but should look into it further for the writing.
+
+I also realized that we mostly don't have to think about widening distributions together which is probably good because that is hard.
+I read about some tools (p-boxes and credal sets) which might provide a technique to widen or join distributions in certain cases.
+
+\subsection{What I wrote this week}
+I wrote a section about zonotopes, handling their definition and trying to work examples to build intuition.
+This also involved writing a proper description of the abstract transformers for zonotopes.
+I think that these transformers are something I should include for all of my abstract domains throughout the thesis and will be revisiting to resolve any stylistic mistakes down the line.
+
+\subsection{Questions}
+\begin{itemize}
+  \item Does Credal set widening exist in literature anywhere?
+  \item What is the concept that tells us how maps from scenarios to domain elements is the same as distributions?
+\end{itemize}
+
+\subsection{Next week plan}
+Write about the mathematical underpinnings of abstract interpretation, handling domains of states and valuations carefully, and proving with \cite{Tarski} that fix points will exist.
+
+Spend some time with what widening operators should do and how exactly we want them to work in our lattice - approach things less visually/geometrically.
+Hopefully this allows me to come up with some useful idea.
+
+
+
 \section{Week $4$}
 
 \subsection{What I learned this week}
@@ -51,7 +85,7 @@ Likely this will involve thinking about probability distributions quite a bit.
 
 \subsection{What I learned this week}
 I finally got a good sense of how the probabilistic polyhedra model work, mostly through conversation with Greg and writing a definition for it based on TOPAZ. 
-I also spent some time reading \cite{ZonotopeJoin} which gives some important information about how the probabilistic polyhedra domain works.
+I also spent some time reading \cite{LogicalZonotopeJoin} which gives some important information about how the probabilistic polyhedra domain works.
 The central algorithm of the paper is not something I am super comfortable with, but I learned from Manu that it is how the probabilistic polyhedra domain handles intersections, and the idea of taking intervals in a "generic position" seems really important.
 
 I think I properly identified what is actually hard about the widening operation for the first time.
@@ -62,7 +96,7 @@ The main issue seems to be that we need a widening "up to affine isomorphism" wh
 I wrote definitions for program state, concrete lattice, probabilistic polyhedra which I think are pretty workable as definitions
 I also spent some time trying to define concrete and abstract semantics, but I confused myself a little and these are not good. 
 The concrete semantics definition I did manage to fix, but abstract definitions still need to be fixed.
-I also stole a definition of Zonotopes from TOPZ (Which I don't really know how to cite) and \cite{Zonotopes}.
+I also stole a definition of Zonotopes from TOPZ (Which I don't really know how to cite) and \cite{ZonotopesTaylor1+}.
 
 \subsection{Questions}
 \begin{itemize}
@@ -91,7 +125,7 @@ It might be better in the future to start with definitions and formalism, then b
 \subsection{Questions}
 \begin{itemize}
   \item Is my notion of program state correct? (no one seems to bother formalizing this anywhere)
-  \item What is going on with the zonotope definition that $\cite{Zonotopes}$ gives?
+  \item What is going on with the zonotope definition that $\cite{ZonotopesTaylor1+}$ gives?
   \item what is the two variables per inequality domain?
   \item What is going on with the approximations in Greg's paper? (Riemann approximations. Can we do better for polytopes?)
   \item What is there to be said about Rice's theorem?

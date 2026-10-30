@@ -124,7 +124,7 @@ keywords = {Abstract interpretation, Widening operators, Convex polyhedra},
 abstract = {In the context of static analysis via abstract interpretation, convex polyhedra constitute the most used abstract domain among those capturing numerical relational information. Since the domain of convex polyhedra admits infinite ascending chains, it has to be used in conjunction with appropriate mechanisms for enforcing and accelerating the convergence of fixpoint computations. Widening operators provide a simple and general characterization for such mechanisms. For the domain of convex polyhedra, the original widening operator proposed by Cousot and Halbwachs amply deserves the name of standard widening since most analysis and verification tools that employ convex polyhedra also employ that operator. Nonetheless, there is an unfulfilled demand for more precise widening operators. In this paper, after a formal introduction to the standard widening where we clarify some aspects that are often overlooked, we embark on the challenging task of improving on it. We present a framework for the systematic definition of new widening operators that are never less precise than a given widening. The framework is then instantiated on the domain of convex polyhedra so as to obtain a new widening operator that improves on the standard widening by combining several heuristics. A preliminary experimental evaluation has yielded promising results. We also suggest an improvement to the well-known widening delay technique that allows one to gain precision while preserving its overall simplicity.}
 }
 
-@InProceedings{Zonotopes,
+@InProceedings{ZonotopesTaylor1+,
 author="Ghorbal, Khalil
 and Goubault, Eric
 and Putot, Sylvie",
@@ -178,5 +178,66 @@ author = {Eric Goubault and Tristan {Le Gall} and Sylvie Putot},
 keywords = {Abstract interpretation, zonotopes, affine relations},
 abstract = {Zonotopes are a convenient abstract domain for the precise analysis of programs with numerical variables. Compared to the domain of convex polyhedra, it is less expensive and may easily handle non-linear assignments. However, the classical join operator of this abstract domain does not always preserve linear invariants, unlike the convex hull. We present a global join operator that preserves some affine relations. We end up by showing some experiments conducted on the constrained Taylor1+ domain of Apron.}
 }
-@misk{placeholder,author = {nobody}}
-  %need to make sure Greg's TOPAZ paper gets cited here
+
+@Inbook{Zaffanella2023,
+author="Zaffanella, Enea
+and Arceri, Vincenzo",
+editor="Arceri, Vincenzo
+and Cortesi, Agostino
+and Ferrara, Pietro
+and Olliaro, Martina",
+title="``Fixing'' the Specification of Widenings",
+bookTitle="Challenges of Software Verification",
+year="2023",
+publisher="Springer Nature Singapore",
+address="Singapore",
+pages="57--76",
+abstract="The development of parametric analysis tools based on Abstract Interpretation relies on a clean separation between a generic fixpoint approximation engine and its main parameter, the abstract domain: a safe integration requires that the engine uses each domain operator according to its specification. Widening operators are special, among other reasons, in that they lack a single, universally adopted specification. In this paper, we review the specification and usage of widenings in several open-source implementations of abstract domains and analysis tools. While doing this, we witness a mismatch that potentially affects the correctness of the analysis, thereby suggesting that the specification of widenings should be ``fixed''. We also provide some evidence that a fixed widening specification matching the classical one allows for precision and efficiency improvements.",
+isbn="978-981-19-9601-6",
+doi="10.1007/978-981-19-9601-6_4",
+url="https://doi.org/10.1007/978-981-19-9601-6_4"
+}
+
+@misc{PerturbedAffineArithmeticInvariant,
+      title={Perturbed affine arithmetic for invariant computation in numerical program analysis}, 
+      author={Eric Goubault and Sylvie Putot},
+      year={2008},
+      eprint={0807.2961},
+      archivePrefix={arXiv},
+      primaryClass={cs.LO},
+      url={https://arxiv.org/abs/0807.2961}, 
+}
+
+@inproceedings{AbstractInterpretationLatticeModel,
+author = {Cousot, Patrick and Cousot, Radhia},
+title = {Abstract interpretation: a unified lattice model for static analysis of programs by construction or approximation of fixpoints},
+year = {1977},
+isbn = {9781450373500},
+publisher = {Association for Computing Machinery},
+address = {New York, NY, USA},
+url = {https://doi.org/10.1145/512950.512973},
+doi = {10.1145/512950.512973},
+abstract = {A program denotes computations in some universe of objects. Abstract interpretation of programs consists in using that denotation to describe computations in another universe of abstract objects, so that the results of abstract execution give some information on the actual computations. An intuitive example (which we borrow from Sintzoff [72]) is the rule of signs. The text -1515 * 17 may be understood to denote computations on the abstract universe {(+), (-), (±)} where the semantics of arithmetic operators is defined by the rule of signs. The abstract execution -1515 * 17 → -(+) * (+) → (-) * (+) → (-), proves that -1515 * 17 is a negative number. Abstract interpretation is concerned by a particular underlying structure of the usual universe of computations (the sign, in our example). It gives a summary of some facets of the actual executions of a program. In general this summary is simple to obtain but inaccurate (e.g. -1515 + 17 → -(+) + (+) → (-) + (+) → (±)). Despite its fundamentally incomplete results abstract interpretation allows the programmer or the compiler to answer questions which do not need full knowledge of program executions or which tolerate an imprecise answer, (e.g. partial correctness proofs of programs ignoring the termination problems, type checking, program optimizations which are not carried in the absence of certainty about their feasibility, …).},
+booktitle = {Proceedings of the 4th ACM SIGACT-SIGPLAN Symposium on Principles of Programming Languages},
+pages = {238–252},
+numpages = {15},
+location = {Los Angeles, California},
+series = {POPL '77}
+}
+
+
+@InProceedings{CousotProbabilistic,
+author="Cousot, Patrick
+and Monerau, Michael",
+editor="Seidl, Helmut",
+title="Probabilistic Abstract Interpretation",
+booktitle="Programming Languages and Systems",
+year="2012",
+publisher="Springer Berlin Heidelberg",
+address="Berlin, Heidelberg",
+pages="169--193",
+abstract="Abstract interpretation has been widely used for verifying properties of computer systems. Here, we present a way to extend this framework to the case of probabilistic systems.",
+isbn="978-3-642-28869-2"
+}
+
+@Misc{placeholder,}
