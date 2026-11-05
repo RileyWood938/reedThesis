@@ -189,27 +189,28 @@ What are the possible values of $y$ when we check \codex{y == 1}?
 In order to treat the abstraction of a program formally, it is first important to create a formal structure for the concrete version of the program.
 
 \begin{definition}
- The \emph{concrete lattice} $L_c$ consists of maps from program variables to sets of possible valuations, ordered by set inclusion on each variable.
+ Let $K$ be the set of possible values that variables of $P$ can take. Then \emph{concrete lattice} $L_c$ of $P$ consists of assignments of program variables to sets of possible valuations:
+ \[L_c = \cP(\text{Vars} \to K)\]
+ \cite{AbstractInterpretationCornellNotes}.
 \end{definition}
 
-As an example, for a program with integer variables, this lattice will consist of maps
+For a program with integer variables, an element of this lattice will consist of a set of maps
 \[
-  L_c = \text{Vars} \to 2^{\ZZ}.
+\text{Vars} \to \ZZ.
 \]
-\todo{this can also be presented as $2^{\text{Vars} \to \ZZ}$}
-We order two maps $m \leq n$ if for all variables $v \in \vars(\cP)$, we have that $m(v) \subseteq n(v)$ \cite{AbstractInterpretationCornellNotes}.
-\todo{prove this is a lattice?}
+This lattice is useful for representing our knowledge about variable valuations.
+If, for example, we have one program variable $x$ taking on either the value $1$ or $2$, we can represent this with the lattice element
+\[
+  \{x \mapsto 1, x \mapsto 2\}
+\]
+We order the lattice by set inclusion
+\[
+  \text{for} \quad a, b \in L_c, \;a \leq b \mtext{ if and only if } a \subset b,
+\]
+and our meet and join are given by intersection and union respectively.
+It is immediately clear from this presentation that $L_c$ is a lattice as power sets are a classical example of lattice structure.
 
-Within this lattice we may be interested in computing certain operations. 
-The standard lattice operations of meet and join will be useful to us, and here they are straightforward to define as intersection and union.
-We shall soon discuss other lattice operations, as well as how we can use the concrete lattice for verification.
-
-\todo{what am I saying in this paragraph?}
-
-In order to follow code through its execution, we must have a formal notion of taking a "snapshot" of the values at a particular moment.
-This is captured by recording a location in the program, that is a label $\ell_i$ (which for the purpose of this text will be annotations).
-We also need to capture the value which each variable takes, a task for which our lattice can prove helpful.
-
+We can couple this lattice with a location in the code to define a snapshot of the program's execution.
 \begin{definition}
   A \emph{program state} $\w = ( \ell, m)$ consists of a location $\ell$ in the program, and a lattice element $m$.
 \end{definition}
@@ -221,6 +222,39 @@ to say that the map $m$ of state $\omega$ assigns the set of values $b$ to varia
 We write $\ell(\w) = \ell_i$ to say that $\w$ has the location $\ell_i$.
 We write $m(\w) = m$ to say that $\w$ has the lattice element $m$.
 \todo{not sure how I want to handle this notation.}
+
+It will be useful momentarily to consider the set of all program states.
+If we let $L$ be the set of all locations in $P$, $L \times L_c$ is the set of program states - all combinations of a location and variable assignment information.
+
+\begin{definition}
+  For a program $P$, if $S$ is the set of program states, the \emph{Semantic Domain} $\cD$ is the lattice $\cP(S)$.
+\end{definition}
+As with $L_c$, we have defined $\cD$ as a power set, so the proof that we have a lattice follows immediately, and we can define our join and meet in the usual way.
+\todo{This is not always how the semantic domain gets treated - its a domain not a lattice - so need to figure out why we want to worry about other styles here}
+
+We can now define a function $\nextstep{P}$ on the lattice which represents "taking the next step of the program".
+It will be easiest to start with an example where we have one state with few possible variable valuations
+\[
+  d \in \cD \mwhere d = \{s\} \mand s= ( \ell_0, \{x \mapsto 0\} )
+\]
+and the line of code following $\ell_0$ does not contain any control flow concepts 
+\begin{code}
+  x = 0
+  x = x + 1
+\end{code}
+This case makes finding the next step easy: we proceed to $\ell_1$ and update our valuation of $x$ accordingly, giving us the state.
+\[
+  t = ( \ell_1, \{x \mapsto 1\} ) \mtext{so we want} \nextstep{P}(d) = \{t\}
+\]
+
+Things become more complicated when our state contains several variable valuation functions
+
+
+
+We can now define a partial function
+\[
+  \nextstep{P}: \cD \to \cD
+\]
 
 We distinguish one state $\w_{\init}$ as the starting configuration of the program.
 This state must have location $\ell_0$, the first label in the code, and will map all variables to the set of possible valuations at the start of execution.
@@ -456,43 +490,7 @@ Consider the following example
 How does our Abstract Interpreter handle this?
 
 
-\chapter{Abstract Domains}
-
-
-
-Our motivating example has also introduced a classic domain for abstract interpretation.
-
-\begin{definition}
-  The \emph{interval domain} consists of intervals over $\RR \cup \{-\infty, \infty\}$.
-\end{definition}
-
-For this domain, our abstraction function $\alpha$ sends a variable $x$ to the range of possible values it could take, and semantics $c$ to some notion of how the semantics could affect the endpoints of the intervals.
-\todo{This needs some work. Maybe $\alpha$ should be included in the abstract domain def?}
-
-\begin{definition}
-  The \emph{Zonotope domain} consists of noise symbols $n_i$ with each associated to an interval over $\RR \cup \{-\infty, \infty\}$. These intervals are restricted to $[-1, 1]$, $[-1, \infty)$, or $(-\infty, 1]$.
-\end{definition}
-
-The expressive power of this domain lies in how $\alpha$ maps program variables to the domain.
-We let
-\[
-  \alpha(x) = a_0 + \sum_{i=1}^d a_in_i 
-\]
-where $d$ is the number of noise symbols defined (also the dimension of the space in which our noise symbols live), and each $a_i \in \RR$.
-This is an affine transformation on the noise symbols, which allows us to capture linear relationships between variables.
-\todo{work an example here?}
-Being able to easily capture linear relationships between variables allows analysis with the Zonotope domain to verify more programs than the interval domain can handle.
-Not all linear relationships can be handled by this model though.
-\todo{work an example here}
-The way that we are able to capture relationships between variables is through exploiting the noise symbols.
-When sampling a variable, we fix a possible value or range of values for each noise symbol, this gives us a restriction on the possible values of other variables to those values that can occur under the restricted range of noise symbols.
-\todo{This is a bad explaination, and probably better handled through example, but it needs to be said somewhere}
-
-\begin{definition}
-  The \emph{polyhedra domain}
-\end{definition}
-\todo{How do we want to approach this?}
-
+\todo{This belongs somewhere else}
 \begin{definition}
   A \emph{Probabilistic Polyhedron} consists of
   \begin{enumerate}

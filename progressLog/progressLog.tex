@@ -13,6 +13,31 @@
 \begin{document}
 
 \maketitle
+\section{Week $6$}
+
+\subsection{What I learned this week}
+The definition for a widening operator, how we can prove that widening operators meet this definition (although I still don't have the proof of the polyhedra widening giving a fixed point), and how to build heuristic improvements upon an existing widening.
+Most of this came from reading \cite{CousotLinearRestraints} where the widening is introduced and initially proved, as well as \cite{PreciseWidening}, which gives a more modern explanation alongside the tools for improving widenings.
+I spent some time talking with Greg about what ascending chains look like in the probabilistic setting, creating a couple of example cases.
+I made some progress towards showing equivalence of the two orderings on probabilistic polyhedra, although things are a bit trickier than in the zonotope case because fixing a nondeterministic valuation limits which scenarios can be in play.
+
+\subsection{What I wrote this week}
+Not a big writing week. 
+I started updating some background to reflect my improved understanding of the various domains we care about.
+
+\subsection{Questions}
+\begin{itemize}
+  \item Can we define something similar to the lgo that \cite{PreciseWidening} uses for the probabilistic case? It seems like the big problem will be the computability requirement. If we can get one of these then we can bootstrap our widening through a bunch of steps to handle the various cases of ascending chain we find.
+  \item What does "the strict version" of an ordering mean? Isn't the ordering strict or not? How do you pick a strict version of it?
+  \item Is introducing some notion of "compatibility " required in order to show that the orderings are the same? Have I made any meaningful progress on that front?
+\end{itemize}
+
+\subsection{Next week plan}
+I have a lot of possible routes to explore now.
+Writing on domains and fixpoints where I formally prove that fixpoints work out how we would like using Tarski/Kleene needs to get done eventually.
+A formal writeup on widenings should also get added to the thesis doc.
+Looking into ways to find the "limit" of a series of CDFs and finding more types of ascending chain will be useful for progressing the research question.
+Test the case where we are approaching a normal distribution in an abstract interpreter to see what nondeterministic info we can get.
 
 \section{Week $5$}
 
